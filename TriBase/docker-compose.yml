@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: learndb_postgres
+    environment:
+      POSTGRES_USER: learndb_admin
+      POSTGRES_PASSWORD: learndb_password
+      POSTGRES_DB: learndb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:6-jammy
+    container_name: learndb_mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: learndb_admin
+      MONGO_INITDB_ROOT_PASSWORD: learndb_password
+      MONGO_INITDB_DATABASE: learndb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5.12.0
+    container_name: learndb_neo4j
+    environment:
+      NEO4J_AUTH: neo4j/learndb_password
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_memory_heap_initial__size: 512m
+      NEO4J_dbms_memory_heap_max__size: 1G
+    ports:
+      - "7474:7474" # HTTP
+      - "7687:7687" # Bolt
+    volumes:
+      - neo4jdata:/data
+      - neo4jlogs:/logs
+      - neo4jimport:/var/lib/neo4j/import
+      - neo4jplugins:/plugins
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: learndb_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --requirepass learndb_redis_password
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  mongodata:
+  neo4jdata:
+  neo4jlogs:
+  neo4jimport:
+  neo4jplugins:
+  redisdata:

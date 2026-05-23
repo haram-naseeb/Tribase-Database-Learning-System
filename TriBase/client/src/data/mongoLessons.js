@@ -1,0 +1,311 @@
+export const mongoLessons = [
+  // ── GROUP 1: Find Basics ────────────────────────────────────────
+  { id:'mg-1', group:'Find Basics', title:'find() — Get All Documents', difficulty:1,
+    explanation:'find() retrieves documents from a collection. Without arguments it returns all documents. In MongoDB shell, results are shown as JSON documents.',
+    syntax:'db.collection.find({})',
+    example:`db.users.find({})`,
+    proTip:'MongoDB returns a cursor, not an array. Chain .toArray() in drivers or .limit() to paginate.' },
+
+  { id:'mg-2', group:'Find Basics', title:'findOne() — First Match', difficulty:1,
+    explanation:'findOne() returns a single document — the first match. Perfect when you expect exactly one result.',
+    syntax:'db.collection.findOne({ field: value })',
+    example:`db.users.findOne({ followers_count: { $gt: 500 } })`,
+    proTip:'findOne() returns null (not an empty cursor) when no document matches.' },
+
+  { id:'mg-3', group:'Find Basics', title:'Projection — Select Fields', difficulty:1,
+    explanation:'Projection limits which fields are returned. Use 1 to include fields, 0 to exclude. _id is included by default.',
+    syntax:'db.collection.find({}, { field: 1, _id: 0 })',
+    example:`db.users.find({}, { username: 1, email: 1, bio: 1, _id: 0 })`,
+    proTip:'You cannot mix include (1) and exclude (0) in the same projection except for _id.' },
+
+  { id:'mg-4', group:'Find Basics', title:'limit() & skip()', difficulty:1,
+    explanation:'limit() caps the number of results returned. skip() jumps over documents — together they implement pagination.',
+    syntax:'db.collection.find({}).skip(10).limit(5)',
+    example:`db.posts.find({}).skip(5).limit(5)`,
+    proTip:'For deep pagination, skip() is slow on large collections. Use range-based pagination ($gt on _id) instead.' },
+
+  { id:'mg-5', group:'Find Basics', title:'sort() — Order Results', difficulty:1,
+    explanation:'sort() orders results by one or more fields. 1 = ascending, -1 = descending.',
+    syntax:'db.collection.find({}).sort({ field: -1 })',
+    example:`db.users.find({}, { username: 1, followers_count: 1, _id: 0 }).sort({ followers_count: -1 }).limit(10)`,
+    proTip:'Always add an index on fields you sort frequently — sorting without an index requires a full collection scan.' },
+
+  // ── GROUP 2: Query Operators ────────────────────────────────────
+  { id:'mg-6', group:'Query Operators', title:'$eq and $ne', difficulty:1,
+    explanation:'$eq matches documents where field equals value. $ne matches where field does not equal value.',
+    syntax:'{ field: { $eq: value } }\n{ field: { $ne: value } }',
+    example:`db.notifications.find({ type: { $eq: "like" } })`,
+    proTip:'{ field: value } is shorthand for { field: { $eq: value } }.' },
+
+  { id:'mg-7', group:'Query Operators', title:'$gt, $lt, $gte, $lte', difficulty:1,
+    explanation:'Comparison operators: $gt (greater than), $lt (less than), $gte (≥), $lte (≤). Work on numbers, dates, and strings.',
+    syntax:'{ field: { $gt: value, $lt: value } }',
+    example:`db.users.find({ followers_count: { $gte: 100, $lte: 2000 } }, { username: 1, followers_count: 1, _id: 0 })`,
+    proTip:'You can combine multiple comparison operators on the same field in one object.' },
+
+  { id:'mg-8', group:'Query Operators', title:'$in and $nin', difficulty:1,
+    explanation:'$in matches documents where the field value is in the given array. $nin is the opposite — not in the array.',
+    syntax:'{ field: { $in: [val1, val2] } }',
+    example:`db.notifications.find({ type: { $in: ["like", "comment"] } })`,
+    proTip:'$in on an indexed field is very efficient — MongoDB uses the index for each value in the array.' },
+
+  { id:'mg-9', group:'Query Operators', title:'$and and $or', difficulty:2,
+    explanation:'$and requires all conditions to be true. $or requires at least one. Both take an array of conditions.',
+    syntax:'{ $and: [{cond1}, {cond2}] }\n{ $or: [{cond1}, {cond2}] }',
+    example:`db.users.find({ $and: [{ followers_count: { $gt: 100 } }, { is_premium: true }] })`,
+    proTip:'Implicit AND: { field1: val1, field2: val2 } is equivalent to $and. Use explicit $and only for the same field twice.' },
+
+  { id:'mg-10', group:'Query Operators', title:'$exists and $type', difficulty:2,
+    explanation:'$exists checks if a field is present in the document. $type checks the BSON data type of a field.',
+    syntax:'{ field: { $exists: true } }\n{ field: { $type: "string" } }',
+    example:`db.posts.find({ media_url: { $exists: true, $ne: null } })`,
+    proTip:'$exists: false finds documents where a field is completely absent — not the same as null.' },
+
+  { id:'mg-11', group:'Query Operators', title:'$regex', difficulty:2,
+    explanation:'$regex matches fields against a regular expression. Supports case-insensitive matching with the $options flag.',
+    syntax:'{ field: { $regex: /pattern/, $options: "i" } }',
+    example:`db.users.find({ bio: { $regex: "dev", $options: "i" } }, { username: 1, bio: 1, _id: 0 })`,
+    proTip:'$regex without an index does a full collection scan. Use a text index for production search.' },
+
+  // ── GROUP 3: Insert ─────────────────────────────────────────────
+  { id:'mg-12', group:'Insert', title:'insertOne()', difficulty:1,
+    explanation:'insertOne() adds a single document to a collection. MongoDB auto-generates _id if not provided.',
+    syntax:'db.collection.insertOne({ field: value })',
+    example:`db.users.insertOne({ username: "new_learner", email: "learner@tribase.io", bio: "Just joined!", followers_count: 0, is_premium: false, tags: ["#mongodb"] })`,
+    proTip:'MongoDB auto-creates the collection if it does not exist when you insert the first document.' },
+
+  { id:'mg-13', group:'Insert', title:'insertMany()', difficulty:1,
+    explanation:'insertMany() inserts multiple documents at once. More efficient than multiple insertOne() calls.',
+    syntax:'db.collection.insertMany([{doc1}, {doc2}])',
+    example:`db.messages.insertMany([{ sender: "alex_j", receiver: "morgan_s", text: "Hello!", read: false }, { sender: "morgan_s", receiver: "alex_j", text: "Hey back!", read: false }])`,
+    proTip:'By default insertMany is ordered — it stops on first error. Use { ordered: false } to continue on errors.' },
+
+  { id:'mg-14', group:'Insert', title:'Insert with Timestamps', difficulty:2,
+    explanation:'MongoDB does not auto-add timestamps. You must include created_at manually or use Mongoose timestamps option.',
+    syntax:'db.collection.insertOne({ ..., created_at: new Date() })',
+    example:`db.posts.insertOne({ user_id: "alex_j", content: "Learning MongoDB with Tribase!", hashtags: ["#mongodb", "#learning"], likes_count: 0, created_at: new Date() })`,
+    proTip:'Mongoose schema option { timestamps: true } auto-manages createdAt and updatedAt fields.' },
+
+  { id:'mg-15', group:'Insert', title:'Upsert with updateOne()', difficulty:2,
+    explanation:'Upsert = insert if not exists, update if exists. Use { upsert: true } option in update operations.',
+    syntax:'db.collection.updateOne({ filter }, { $set: {...} }, { upsert: true })',
+    example:`db.users.updateOne({ username: "upsert_test" }, { $set: { email: "test@tribase.io", bio: "Upserted!" } }, { upsert: true })`,
+    proTip:'Upserts are atomic — safe for concurrent writes. MongoDB uses $setOnInsert for fields only set on insert.' },
+
+  // ── GROUP 4: Update ─────────────────────────────────────────────
+  { id:'mg-16', group:'Update', title:'$set Operator', difficulty:1,
+    explanation:'$set updates specific fields without affecting other fields in the document. Essential for partial updates.',
+    syntax:'db.collection.updateOne({ filter }, { $set: { field: newValue } })',
+    example:`db.users.updateOne({ username: "alex_j" }, { $set: { bio: "Updated bio — learning Tribase!" } })`,
+    proTip:'Without $set, the entire document would be replaced. Always use $set for partial updates.' },
+
+  { id:'mg-17', group:'Update', title:'$inc Operator', difficulty:2,
+    explanation:'$inc increments (or decrements with a negative value) a numeric field by the given amount.',
+    syntax:'db.collection.updateOne({ filter }, { $inc: { field: amount } })',
+    example:`db.users.updateOne({ username: "morgan_s" }, { $inc: { followers_count: 10 } })`,
+    proTip:'$inc is atomic — safe for concurrent updates like incrementing view counts or like counters.' },
+
+  { id:'mg-18', group:'Update', title:'$push and $pull', difficulty:2,
+    explanation:'$push adds an item to an array field. $pull removes items matching a condition from an array.',
+    syntax:'{ $push: { arrayField: value } }\n{ $pull: { arrayField: condition } }',
+    example:`db.users.updateOne({ username: "taylor_r" }, { $push: { tags: "#tribase" } })`,
+    proTip:'Use $addToSet instead of $push to avoid duplicate values in arrays.' },
+
+  { id:'mg-19', group:'Update', title:'$unset Operator', difficulty:2,
+    explanation:'$unset removes a field from a document entirely.',
+    syntax:'db.collection.updateOne({ filter }, { $unset: { field: "" } })',
+    example:`db.users.updateOne({ username: "alex_j" }, { $unset: { bio: "" } })`,
+    proTip:'After $unset, the field will not exist in the document at all — not even as null.' },
+
+  { id:'mg-20', group:'Update', title:'updateMany()', difficulty:2,
+    explanation:'updateMany() applies an update to ALL documents matching the filter — not just the first one.',
+    syntax:'db.collection.updateMany({ filter }, { $set: { field: value } })',
+    example:`db.notifications.updateMany({ read: false }, { $set: { read: true } })`,
+    proTip:'Without a filter, updateMany({}, ...) updates every document in the collection.' },
+
+  { id:'mg-21', group:'Update', title:'replaceOne()', difficulty:2,
+    explanation:'replaceOne() completely replaces a document (except _id). All existing fields are removed and replaced.',
+    syntax:'db.collection.replaceOne({ filter }, { new document })',
+    example:`db.messages.replaceOne({ sender: "alex_j", receiver: "morgan_s" }, { sender: "alex_j", receiver: "morgan_s", text: "Replaced message!", read: false })`,
+    proTip:'Use updateOne with $set for partial updates. Use replaceOne only when you want to replace the full document.' },
+
+  // ── GROUP 5: Delete ─────────────────────────────────────────────
+  { id:'mg-22', group:'Delete', title:'deleteOne()', difficulty:1,
+    explanation:'deleteOne() removes the first document matching the filter. It is atomic — safe for concurrent use.',
+    syntax:'db.collection.deleteOne({ filter })',
+    example:`db.messages.deleteOne({ read: true })`,
+    proTip:'Always verify your filter with findOne() before deleteOne() to avoid deleting the wrong document.' },
+
+  { id:'mg-23', group:'Delete', title:'deleteMany()', difficulty:1,
+    explanation:'deleteMany() removes ALL documents matching the filter. Use with extreme caution.',
+    syntax:'db.collection.deleteMany({ filter })',
+    example:`db.notifications.deleteMany({ read: true })`,
+    proTip:'deleteMany({}) deletes every document. There is no TRUNCATE in MongoDB — drop and recreate the collection instead.' },
+
+  { id:'mg-24', group:'Delete', title:'findOneAndDelete()', difficulty:2,
+    explanation:'findOneAndDelete() atomically finds and deletes a document, returning the deleted document.',
+    syntax:'db.collection.findOneAndDelete({ filter })',
+    example:`db.messages.findOneAndDelete({ read: true })`,
+    proTip:'Useful for implementing queues — atomically claim and remove a task in one operation.' },
+
+  // ── GROUP 6: Aggregation Pipeline ──────────────────────────────
+  { id:'mg-25', group:'Aggregation Pipeline', title:'$match Stage', difficulty:2,
+    explanation:'$match filters documents in the pipeline — like WHERE in SQL. Place it first to use indexes.',
+    syntax:'[{ $match: { field: condition } }, ...]',
+    example:`db.posts.aggregate([{ $match: { hashtags: "#mongodb" } }, { $count: "total_posts" }])`,
+    proTip:'$match early in the pipeline reduces the number of documents processed by subsequent stages.' },
+
+  { id:'mg-26', group:'Aggregation Pipeline', title:'$group Stage', difficulty:2,
+    explanation:'$group groups documents by a key and applies accumulators like $sum, $avg, $count. Similar to SQL GROUP BY.',
+    syntax:'[{ $group: { _id: "$field", count: { $sum: 1 } } }]',
+    example:`db.notifications.aggregate([{ $group: { _id: "$type", count: { $sum: 1 } } }, { $sort: { count: -1 } }])`,
+    proTip:'Use _id: null to aggregate all documents into one group (like SELECT COUNT(*) without GROUP BY).' },
+
+  { id:'mg-27', group:'Aggregation Pipeline', title:'$project Stage', difficulty:2,
+    explanation:'$project reshapes documents — include/exclude fields, rename them, or create computed fields.',
+    syntax:'[{ $project: { field: 1, newField: "$oldField" } }]',
+    example:`db.users.aggregate([{ $project: { username: 1, email: 1, followerCount: "$followers_count", _id: 0 } }, { $limit: 5 }])`,
+    proTip:'$project can use expressions to compute new fields: { totalWithTax: { $multiply: ["$price", 1.1] } }' },
+
+  { id:'mg-28', group:'Aggregation Pipeline', title:'$sort & $limit', difficulty:1,
+    explanation:'$sort orders documents (1=asc, -1=desc). $limit caps the output count. Use them together for top-N queries.',
+    syntax:'[{ $sort: { field: -1 } }, { $limit: 10 }]',
+    example:`db.users.aggregate([{ $sort: { followers_count: -1 } }, { $limit: 5 }, { $project: { username: 1, followers_count: 1, _id: 0 } }])`,
+    proTip:'Placing $sort after $limit is an error — always sort before limiting.' },
+
+  { id:'mg-29', group:'Aggregation Pipeline', title:'$lookup (JOIN)', difficulty:3,
+    explanation:'$lookup performs a left outer join with another collection. Similar to SQL LEFT JOIN.',
+    syntax:'[{ $lookup: { from: "col", localField: "fk", foreignField: "_id", as: "result" } }]',
+    example:`db.posts.aggregate([{ $lookup: { from: "users", localField: "user_id", foreignField: "username", as: "author" } }, { $unwind: "$author" }, { $project: { content: 1, "author.username": 1, _id: 0 } }, { $limit: 5 }])`,
+    proTip:'$lookup returns an array. Use $unwind immediately after to flatten it if the join is 1:1.' },
+
+  { id:'mg-30', group:'Aggregation Pipeline', title:'$unwind', difficulty:2,
+    explanation:'$unwind deconstructs an array field — each array element becomes a separate document.',
+    syntax:'[{ $unwind: "$arrayField" }]',
+    example:`db.posts.aggregate([{ $unwind: "$hashtags" }, { $group: { _id: "$hashtags", count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 10 }])`,
+    proTip:'$unwind increases document count significantly. Use $match before $unwind to reduce the input.' },
+
+  { id:'mg-31', group:'Aggregation Pipeline', title:'$addFields', difficulty:2,
+    explanation:'$addFields adds new computed fields to documents without removing existing ones.',
+    syntax:'[{ $addFields: { newField: expression } }]',
+    example:`db.users.aggregate([{ $addFields: { tagCount: { $size: { $ifNull: ["$tags", []] } } } }, { $sort: { tagCount: -1 } }, { $project: { username: 1, tagCount: 1, tags: 1, _id: 0 } }, { $limit: 5 }])`,
+    proTip:'$addFields is like $project but keeps all existing fields.' },
+
+  { id:'mg-32', group:'Aggregation Pipeline', title:'Multi-Stage Pipeline', difficulty:3,
+    explanation:'Chain multiple stages to build complex analytics. Each stage transforms documents passed to the next.',
+    syntax:'[{ $match }, { $group }, { $sort }, { $limit }]',
+    example:`db.posts.aggregate([{ $unwind: "$hashtags" }, { $group: { _id: "$hashtags", posts: { $sum: 1 }, totalLikes: { $sum: "$likes_count" } } }, { $sort: { totalLikes: -1 } }, { $limit: 5 }])`,
+    proTip:'Think of the aggregation pipeline as a Unix pipe — each stage transforms the stream of documents.' },
+
+  // ── GROUP 7: Array Operations ───────────────────────────────────
+  { id:'mg-33', group:'Array Operations', title:'$elemMatch', difficulty:2,
+    explanation:'$elemMatch matches documents where at least one array element satisfies all conditions.',
+    syntax:'{ arrayField: { $elemMatch: { cond1, cond2 } } }',
+    example:`db.users.find({ tags: { $elemMatch: { $regex: "tech", $options: "i" } } }, { username: 1, tags: 1, _id: 0 })`,
+    proTip:'Without $elemMatch, multiple conditions on array elements can match different elements.' },
+
+  { id:'mg-34', group:'Array Operations', title:'$size Operator', difficulty:1,
+    explanation:'$size matches arrays of a specific length. Only matches exact size — cannot use $gt/$lt with $size.',
+    syntax:'{ arrayField: { $size: n } }',
+    example:`db.users.find({ tags: { $size: 2 } }, { username: 1, tags: 1, _id: 0 })`,
+    proTip:'To query arrays with size greater than N, use: { "field.N": { $exists: true } }' },
+
+  { id:'mg-35', group:'Array Operations', title:'$all Operator', difficulty:2,
+    explanation:'$all matches documents where the array contains ALL of the specified elements (in any order).',
+    syntax:'{ arrayField: { $all: [val1, val2] } }',
+    example:`db.users.find({ tags: { $all: ["#tech", "#ai"] } }, { username: 1, tags: 1, _id: 0 })`,
+    proTip:'$all is like $and for array elements. Order does not matter.' },
+
+  { id:'mg-36', group:'Array Operations', title:'Array Index Queries', difficulty:2,
+    explanation:'Query specific array positions using dot notation with the index: arrayField.0 queries the first element.',
+    syntax:'{ "arrayField.0": value }',
+    example:`db.users.find({ "tags.0": "#tech" }, { username: 1, tags: 1, _id: 0 })`,
+    proTip:'Use $slice in projection to return only part of an array: { likes: { $slice: 3 } }' },
+
+  { id:'mg-37', group:'Array Operations', title:'Nested Document Queries', difficulty:2,
+    explanation:'Query inside nested objects using dot notation. MongoDB supports deep nesting with dot notation.',
+    syntax:'{ "outerField.innerField": value }',
+    example:`db.messages.find({ "sender": "alex_j" }, { sender: 1, receiver: 1, text: 1, _id: 0 })`,
+    proTip:'For deep nested queries, consider if the data model should be flattened or referenced instead.' },
+
+  // ── GROUP 8: Indexes ────────────────────────────────────────────
+  { id:'mg-38', group:'Indexes', title:'Single Field Index', difficulty:2,
+    explanation:'createIndex() creates an index on one field. Indexes dramatically speed up find() and sort() on large collections.',
+    syntax:'db.collection.createIndex({ field: 1 })',
+    example:`db.users.find({ followers_count: { $gt: 300 } }, { username: 1, followers_count: 1, _id: 0 })`,
+    proTip:'MongoDB automatically creates an index on _id. View all indexes with db.collection.getIndexes().' },
+
+  { id:'mg-39', group:'Indexes', title:'Compound Index', difficulty:3,
+    explanation:'A compound index covers queries on multiple fields. Field order and direction matter for which queries it covers.',
+    syntax:'db.collection.createIndex({ field1: 1, field2: -1 })',
+    example:`db.posts.find({ hashtags: "#tech", likes_count: { $gt: 50 } }, { content: 1, hashtags: 1, likes_count: 1, _id: 0 })`,
+    proTip:'The ESR rule: Equality fields first, Sort fields second, Range fields last in compound indexes.' },
+
+  { id:'mg-40', group:'Indexes', title:'Text Index', difficulty:3,
+    explanation:'A text index enables full-text search with the $text operator. Only one text index is allowed per collection.',
+    syntax:'db.collection.createIndex({ field: "text" })',
+    example:`db.posts.find({ hashtags: { $regex: "nosql", $options: "i" } }, { content: 1, hashtags: 1, _id: 0 })`,
+    proTip:'Text indexes support stemming and stop words. Use Atlas Search for advanced full-text capabilities.' },
+
+  { id:'mg-41', group:'Indexes', title:'explain() — Query Analysis', difficulty:3,
+    explanation:'explain() shows the execution plan for a query — whether it uses an index (IXSCAN) or scans all documents (COLLSCAN).',
+    syntax:'db.collection.find({}).explain("executionStats")',
+    example:`db.users.distinct("tags")`,
+    proTip:'Look for "stage": "COLLSCAN" in explain output — that means no index is used and queries will be slow at scale.' },
+
+  // ── GROUP 9: Schema Design ──────────────────────────────────────
+  { id:'mg-42', group:'Schema Design', title:'Embedding vs Referencing', difficulty:3,
+    explanation:'Embed related data when accessed together frequently (comments inside posts). Reference when data is large or shared across documents.',
+    syntax:'// Embedded:\n{ post: "...", comments: [{text:"..."}] }\n// Referenced:\n{ post_id: ObjectId("...") }',
+    example:`db.posts.find({}, { content: 1, hashtags: 1, likes_count: 1, _id: 0 }).limit(5)`,
+    proTip:'Rule of thumb: If you always fetch the related data together, embed it. If it grows unbounded, reference it.' },
+
+  { id:'mg-43', group:'Schema Design', title:'ObjectId & References', difficulty:2,
+    explanation:'MongoDB uses ObjectId for _id by default — a 12-byte value encoding timestamp, machine id, and counter. Use ObjectId as foreign keys.',
+    syntax:'// ObjectId encodes creation time:\nnew ObjectId().getTimestamp()',
+    example:`db.messages.find({}, { sender: 1, receiver: 1, text: 1, _id: 0 })`,
+    proTip:'You can extract the creation timestamp from any ObjectId — no need for a separate created_at for the _id field.' },
+
+  { id:'mg-44', group:'Schema Design', title:'Timestamps Pattern', difficulty:2,
+    explanation:'Always store timestamps as ISODate (native Date objects), not strings. This enables date-based queries and sorting.',
+    syntax:'{ created_at: new Date(), updated_at: new Date() }',
+    example:`db.posts.aggregate([{ $group: { _id: null, newest: { $max: "$created_at" }, oldest: { $min: "$created_at" }, total: { $sum: 1 } } }])`,
+    proTip:'Mongoose timestamps: true option auto-manages createdAt/updatedAt in ISO format.' },
+
+  { id:'mg-45', group:'Schema Design', title:'Schema Validation', difficulty:3,
+    explanation:'MongoDB supports JSON Schema validation to enforce document structure. Validation is applied on insert and update.',
+    syntax:'db.createCollection("col", { validator: { $jsonSchema: {...} } })',
+    example:`db.users.find({ email: { $regex: "@" } }, { username: 1, email: 1, _id: 0 })`,
+    proTip:'Validation can be set to "warn" (log only) or "error" (reject invalid documents). Start with warn to audit existing data.' },
+
+  // ── GROUP 10: Practical ─────────────────────────────────────────
+  { id:'mg-46', group:'Practical', title:'Pagination Pattern', difficulty:2,
+    explanation:'Cursor-based pagination using $gt on the last _id seen is more efficient than skip/limit for large datasets.',
+    syntax:'db.collection.find({ _id: { $gt: lastSeenId } }).limit(10)',
+    example:`db.posts.aggregate([{ $sort: { created_at: -1 } }, { $limit: 5 }, { $project: { content: 1, likes_count: 1, created_at: 1, _id: 0 } }])`,
+    proTip:'Always sort by an indexed field when paginating. _id is always indexed.' },
+
+  { id:'mg-47', group:'Practical', title:'Text Search', difficulty:3,
+    explanation:'Full-text search with $text searches across all fields with a text index. Returns documents ranked by relevance.',
+    syntax:'db.collection.find({ $text: { $search: "query" } })',
+    example:`db.posts.find({ hashtags: { $regex: "javascript", $options: "i" } }, { content: 1, hashtags: 1, _id: 0 })`,
+    proTip:'Use Atlas Search for typo tolerance, synonyms, and advanced relevance tuning.' },
+
+  { id:'mg-48', group:'Practical', title:'Aggregation Statistics', difficulty:2,
+    explanation:'Use the aggregation pipeline to compute statistics like average posts per user, distribution of notification types, etc.',
+    syntax:'[{ $group }, { $project: { avg: { $avg: "$count" } } }]',
+    example:`db.users.aggregate([{ $group: { _id: null, avgFollowers: { $avg: "$followers_count" }, maxFollowers: { $max: "$followers_count" }, totalUsers: { $sum: 1 } } }])`,
+    proTip:'Aggregation pipelines can replace many ad-hoc application-level calculations.' },
+
+  { id:'mg-49', group:'Practical', title:'Distinct Values', difficulty:1,
+    explanation:'distinct() returns an array of all unique values for a given field across a collection.',
+    syntax:'db.collection.distinct("field")',
+    example:`db.notifications.distinct("type")`,
+    proTip:'distinct() is useful for populating filter dropdowns or validating data quality.' },
+
+  { id:'mg-50', group:'Practical', title:'Count with Conditions', difficulty:1,
+    explanation:'countDocuments() counts documents matching a filter. estimatedDocumentCount() is faster but approximate.',
+    syntax:'db.collection.countDocuments({ filter })',
+    example:`db.users.countDocuments({ is_premium: true })`,
+    proTip:'estimatedDocumentCount() uses collection metadata and is O(1) — use it for total counts on large collections.' },
+];
